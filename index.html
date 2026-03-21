@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoSort: Waste Management Challenge</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+  overflow: hidden;
+  background: linear-gradient(270deg, #0f2027, #203a43, #2c5364);
+  background-size: 600% 600%;
+  animation: gradientBG 10s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+.screen { display: none; padding-top: 100px; }
+.active { display: block; }
+
+h1 { font-size: 50px; color: #00e5ff; }
+h2, h3, p { color: #fff; }
+
+button {
+  padding: 12px 25px;
+  margin: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #00e676;
+  cursor: pointer;
+}
+
+#item {
+  font-size: 30px;
+  margin-top: 30px;
+  color: #fff;
+}
+
+/* HEARTS ❤️ */
+#lives {
+  font-size: 25px;
+  color: red;
+}
+
+/* IMPACT TEXT */
+#impact {
+  margin-top: 15px;
+  font-size: 18px;
+  color: #ff5252;
+}
+
+/* BINS */
+.bins {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.bin {
+  width: 150px;
+  height: 120px;
+  line-height: 120px;
+  color: white;
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.bio { background: #00c853; }
+.nonbio { background: #d50000; }
+.recycle { background: #2962ff; }
+</style>
+</head>
+
+<body>
+
+<!-- AUDIO -->
+<audio id="bgMusic" src="music.mp3" loop></audio>
+<audio id="correctSound" src="correct.mp3"></audio>
+<audio id="wrongSound" src="wrong.mp3"></audio>
+<audio id="gameoverSound" src="gameover.mp3"></audio>
+
+<!-- SCREEN 1 -->
+<div id="screen1" class="screen active">
+  <h1>♻️ EcoSort</h1>
+  <button onclick="goStart()">Start Game</button>
+</div>
+
+<!-- SCREEN 2 -->
+<div id="screen2" class="screen">
+  <h2>Select Difficulty</h2>
+  <button onclick="setLevel('easy')">Easy</button>
+  <button onclick="setLevel('medium')">Medium</button>
+  <button onclick="setLevel('hard')">Hard</button>
+</div>
+
+<!-- SCREEN 3 -->
+<div id="screen3" class="screen">
+  <h2>Enter Name</h2>
+  <input id="username" placeholder="Your Name">
+  <br>
+  <button onclick="startGame()">Play</button>
+</div>
+
+<!-- GAME -->
+<div id="screen4" class="screen">
+  <h2 id="player"></h2>
+  <h3 id="levelText"></h3>
+  <h3 id="timer"></h3>
+  <h3 id="score"></h3>
+  <h3 id="lives"></h3>
+  <h3 id="pollution"></h3>
+
+  <div id="item"></div>
+  <div id="impact"></div>
+
+  <div class="bins">
+    <div class="bin bio" onclick="check('bio')">Biodegradable</div>
+    <div class="bin nonbio" onclick="check('nonbio')">Non-Biodegradable</div>
+    <div class="bin recycle" onclick="check('recycle')">Recycle</div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen5" class="screen">
+  <h2>Game Result</h2>
+  <p id="resultText"></p>
+  <button onclick="next(1)">Play Again</button>
+</div>
+
+<script>
+// NAV
+function next(n){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen"+n).classList.add("active");
+}
+
+// START FIX
+function goStart(){
+  startMusic();
+  next(2);
+}
+
+function startMusic(){
+  document.getElementById("bgMusic").play().catch(()=>{});
+}
+
+// LEVEL
+let level="easy";
+let time=30;
+
+function setLevel(l){
+  level=l;
+  if(l==="easy") time=40;
+  if(l==="medium") time=30;
+  if(l==="hard") time=20;
+  next(3);
+}
+
+// DATA
+const wasteItems = [
+  {name:"Banana Peel",type:"bio"},
+  {name:"Plastic Bottle",type:"recycle"},
+  {name:"Styrofoam",type:"nonbio"},
+  {name:"Leaves",type:"bio"},
+  {name:"Paper",type:"recycle"},
+  {name:"Candy Wrapper",type:"nonbio"}
+];
+
+// VARIABLES
+let current, score=0, pollution=0, player="";
+let lives=5;
+
+// START GAME
+function startGame(){
+  player=document.getElementById("username").value;
+  if(!player) return alert("Enter name!");
+
+  score=0;
+  pollution=0;
+  lives=5;
+
+  document.getElementById("player").innerText="Player: "+player;
+  document.getElementById("levelText").innerText="Level: "+level;
+  document.getElementById("timer").innerText="Time: "+time;
+
+  updateLives();
+  next(4);
+  newItem();
+  startTimer();
+}
+
+// NEW ITEM
+function newItem(){
+  current=wasteItems[Math.floor(Math.random()*wasteItems.length)];
+  document.getElementById("item").innerText=current.name;
+  document.getElementById("impact").innerText="";
+}
+
+// CHECK
+function check(ans){
+  if(ans===current.type){
+    score++;
+    document.getElementById("correctSound").play();
+  } else {
+    lives--;
+    pollution+=10;
+    document.getElementById("wrongSound").play();
+    showImpact();
+  }
+  update();
+  newItem();
+
+  if(lives<=0){
+    endGame();
+  }
+}
+
+// IMPACT MESSAGE 🔥
+function showImpact(){
+  let impacts=[
+    "❌ Pollution increased!",
+    "🌊 Water contamination!",
+    "🐟 Harm to marine life!",
+    "🌱 Soil damage!",
+    "🌍 Environmental harm!"
+  ];
+  document.getElementById("impact").innerText=
+    impacts[Math.floor(Math.random()*impacts.length)];
+}
+
+// UPDATE
+function update(){
+  document.getElementById("score").innerText="Score: "+score;
+  document.getElementById("pollution").innerText="Pollution: "+pollution+"%";
+  updateLives();
+}
+
+// HEART DISPLAY ❤️
+function updateLives(){
+  let hearts="";
+  for(let i=0;i<lives;i++){
+    hearts+="❤️ ";
+  }
+  document.getElementById("lives").innerText="Lives: "+hearts;
+}
+
+// TIMER
+function startTimer(){
+  let t=setInterval(()=>{
+    time--;
+    document.getElementById("timer").innerText="Time: "+time;
+
+    if(time<=0){
+      clearInterval(t);
+      endGame();
+    }
+  },1000);
+}
+
+// END
+function endGame(){
+  document.getElementById("gameoverSound").play();
+
+  document.getElementById("resultText").innerText=
+    player+" | Score: "+score+" | Pollution: "+pollution+"%";
+
+  next(5);
+}
+</script>
+
+</body>
+</html>
