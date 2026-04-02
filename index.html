@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>EcoSort</title>
+<title>EcoSort Final</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#1e3c72;color:white;overflow:hidden;}
@@ -30,7 +30,7 @@ border-radius:10px;
 cursor:pointer;
 font-weight:bold;
 text-align:center;
-font-size:14px;
+font-size:13px;
 }
 
 .bio{background:green;}
@@ -83,21 +83,21 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <div id="s1" class="screen active">
 <h1>♻️ EcoSort</h1>
-<p>Rotate phone to LANDSCAPE for better control. KUNG AYAW MO, DE WAG!
+<p>Rotate phone to <b>LANDSCAPE MODE</b></p>
+<p>Sorting = classify waste | Quiz = answer category | Falling = catch correct waste only</p>
 <button onclick="next('Name')">Start</button>
 </div>
 
 <div id="sName" class="screen">
-<h2>Enter Name</h2>
-<input id="username">
+<input id="username" placeholder="Enter name">
 <br><br>
 <button onclick="saveName()">Continue</button>
 </div>
 
 <div id="s2" class="screen">
-<button onclick="setLevel(45)">Easy (45s)</button>
-<button onclick="setLevel(30)">Medium (30s)</button>
-<button onclick="setLevel(20)">Hard (20s)</button>
+<button onclick="setLevel(45)">Easy</button>
+<button onclick="setLevel(30)">Medium</button>
+<button onclick="setLevel(20)">Hard</button>
 </div>
 
 <div id="s3" class="screen">
@@ -118,7 +118,7 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <div class="container">
 
-<div class="side" id="playerSide">
+<div class="side">
 <h2>YOU</h2>
 <div class="hud">
 <div id="scoreP">Score:0</div>
@@ -127,7 +127,7 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 <div id="itemP" class="item"></div>
 </div>
 
-<div class="side" id="aiSide">
+<div class="side">
 <h2>AI 🤖</h2>
 <div class="hud">
 <div id="scoreAI">AI:0</div>
@@ -169,12 +169,18 @@ let time=30,score=0,aiScore=0,mode,current;
 let timerInt,fallInterval,targetType;
 let canP,canAI,xP,xAI;
 
-const waste=[
-{name:"banana peel",type:"bio"},
-{name:"plastic bottle",type:"nonbio"},
-{name:"paper",type:"recycle"}
-];
+/* 🔥 50 EACH */
+const make=(arr,type)=>arr.map(x=>({name:x,type:type}));
 
+const bio = make([/* 50 items */ "banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones","chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste","vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell","peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit","organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"],"bio");
+
+const nonbio = make([/* 50 items */ "plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap","snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film","rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic","plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste","food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"],"nonbio");
+
+const recycle = make([/* 50 items */ "paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder","envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)","paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can","aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap","clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"],"recycle");
+
+const waste=[...bio,...nonbio,...recycle];
+
+/* GAME SAME */
 function setLevel(t){time=t;next(3);}
 function setMode(m){mode=m;startGame();}
 
@@ -214,16 +220,15 @@ scoreP.innerText="Score:"+score;
 newRound();
 }
 
-/* AI SORT/QUIZ */
 function startAI(){
 setInterval(()=>{
 let guess=["bio","nonbio","recycle"][Math.random()*3|0];
 if(guess===current.type) aiScore++;
 scoreAI.innerText="AI:"+aiScore;
-},1000);
+},1200);
 }
 
-/* FALLING SPLIT */
+/* FALL SAME (SLOW) */
 function startFall(type){
 targetType=type;
 document.getElementById("bins").style.display="none";
@@ -232,14 +237,12 @@ next(4);
 
 direction.innerText="Catch ONLY "+type.toUpperCase();
 
-/* PLAYER CAN */
 canP=document.createElement("div");
 canP.className="trashcan";
 canP.style.left="25%";
 canP.innerText=type;
 document.body.appendChild(canP);
 
-/* AI CAN */
 canAI=document.createElement("div");
 canAI.className="trashcan";
 canAI.style.left="75%";
@@ -259,20 +262,19 @@ div.style.left=Math.random()*window.innerWidth+"px";
 document.body.appendChild(div);
 
 let y=0;
+
 let move=setInterval(()=>{
-y+=6;
+y+=3;
 div.style.top=y+"px";
 
 if(y>window.innerHeight-150){
 
-/* PLAYER */
 if(Math.abs(xP-div.offsetLeft)<80){
 if(obj.type===targetType) score++; else score--;
 scoreP.innerText="Score:"+score;
 }
 
-/* AI AUTO MOVE */
-xAI += (div.offsetLeft - xAI)*0.3;
+xAI += (div.offsetLeft - xAI)*0.2;
 canAI.style.left=xAI+"px";
 
 if(Math.abs(xAI-div.offsetLeft)<80){
@@ -285,12 +287,11 @@ clearInterval(move);
 }
 },50);
 
-},1200);
+},1800);
 
 startTimer();
 }
 
-/* PLAYER MOVE */
 function moveLeft(){xP-=40;canP.style.left=xP+"px";}
 function moveRight(){xP+=40;canP.style.left=xP+"px";}
 
@@ -300,5 +301,6 @@ if(e.key==="ArrowRight") moveRight();
 });
 
 </script>
+
 </body>
 </html>
