@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>EcoSort</title>
+<title>EcoSort Final</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#1e3c72;color:white;overflow:hidden;}
@@ -22,7 +22,6 @@ display:flex;justify-content:center;gap:10px;
 background:#000000aa;padding:10px;
 }
 
-/* 🔧 LIIT FONT PARA KASYA */
 .bin{
 width:160px;height:70px;
 line-height:20px;
@@ -47,7 +46,7 @@ padding:8px;border-radius:8px;
 
 .trashcan{
 position:fixed;
-bottom:90px;
+bottom:120px;
 left:50%;
 transform:translateX(-50%);
 width:170px;height:60px;
@@ -60,6 +59,24 @@ border-radius:10px;
 font-size:13px;
 }
 
+.controls{
+position:fixed;
+bottom:20px;
+width:100%;
+display:flex;
+justify-content:space-between;
+padding:0 40px;
+}
+
+.ctrlBtn{
+width:120px;
+height:50px;
+font-size:18px;
+border-radius:10px;
+border:none;
+background:#ffffffcc;
+}
+
 button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 </style>
 </head>
@@ -68,6 +85,12 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <div id="s1" class="screen active">
 <h1>♻️ EcoSort</h1>
+<p style="width:70%;margin:auto;">
+EcoSort is an interactive waste management game designed to help students learn proper waste segregation. 
+Players will identify and classify different types of waste into biodegradable, non-biodegradable, and recyclable categories. 
+The game includes multiple modes to make learning fun, competitive, and engaging.
+</p>
+<br>
 <button onclick="next('Name')">Start</button>
 </div>
 
@@ -79,12 +102,14 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 </div>
 
 <div id="s2" class="screen">
-<button onclick="setLevel(45)">Easy</button>
-<button onclick="setLevel(30)">Medium</button>
-<button onclick="setLevel(20)">Hard</button>
+<h3>Select Difficulty (Time)</h3>
+<button onclick="setLevel(45)">Easy (45s)</button>
+<button onclick="setLevel(30)">Medium (30s)</button>
+<button onclick="setLevel(20)">Hard (20s)</button>
 </div>
 
 <div id="s3" class="screen">
+<h2>Select Game Mode</h2>
 <button onclick="setMode('sort')">Sorting</button>
 <button onclick="setMode('quiz')">Quiz</button>
 <button onclick="next('fallSelect')">Falling</button>
@@ -92,6 +117,7 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <div id="sfallSelect" class="screen">
 <h2>Select Target</h2>
+<p>Choose which type of waste you want to catch.</p>
 <button onclick="startFall('bio')">BIODEGRADABLE</button>
 <button onclick="startFall('nonbio')">NON-BIODEGRADABLE</button>
 <button onclick="startFall('recycle')">RECYCLABLE</button>
@@ -128,6 +154,11 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 <div class="bin recycle" onclick="playerCheck('recycle')">RECYCLABLE</div>
 </div>
 
+<div id="controls" class="controls" style="display:none;">
+<button class="ctrlBtn" onclick="moveLeft()">⬅ LEFT</button>
+<button class="ctrlBtn" onclick="moveRight()">RIGHT ➡</button>
+</div>
+
 </div>
 
 <script>
@@ -147,32 +178,16 @@ next(2);
 
 let time=30,score=0,aiScore=0,mode,current;
 let timerInt,fallInterval,targetType;
+let can,x;
 
+/* SAME DATA */
 const make = (arr,type)=>arr.map(x=>({name:x,type:type}));
 
-const bio = make([
-"banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones",
-"chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste",
-"vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell",
-"peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit",
-"organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"
-],"bio");
+const bio = make(["banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones","chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste","vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell","peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit","organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"],"bio");
 
-const nonbio = make([
-"plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap",
-"snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film",
-"rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic",
-"plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste",
-"food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"
-],"nonbio");
+const nonbio = make(["plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap","snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film","rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic","plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste","food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"],"nonbio");
 
-const recycle = make([
-"paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder",
-"envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)",
-"paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can",
-"aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap",
-"clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"
-],"recycle");
+const recycle = make(["paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder","envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)","paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can","aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap","clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"],"recycle");
 
 const waste=[...bio,...nonbio,...recycle];
 
@@ -188,9 +203,16 @@ function setMode(m){mode=m;startGame();}
 function startGame(){
 score=0;aiScore=0;
 document.getElementById("bins").style.display="flex";
+document.getElementById("controls").style.display="none";
 next(4);
+setDirection();
 newRound();
 startTimer();
+}
+
+function setDirection(){
+if(mode==="sort"){direction.innerText="Click the correct bin.";}
+if(mode==="quiz"){direction.innerText="Answer using bins below.";}
 }
 
 function startTimer(){
@@ -220,24 +242,22 @@ itemAI.innerText=current.q;
 }
 }
 
+/* FALL */
 function startFall(type){
 targetType=type;
 document.getElementById("bins").style.display="none";
+document.getElementById("controls").style.display="flex";
+
 next(4);
 
-direction.innerText="Catch only "+type.toUpperCase();
+direction.innerText="Catch ONLY "+type.toUpperCase();
 
-let can=document.createElement("div");
+can=document.createElement("div");
 can.className="trashcan";
 can.innerText=type.toUpperCase();
 document.body.appendChild(can);
 
-let x=window.innerWidth/2;
-document.addEventListener("keydown",(e)=>{
-if(e.key==="ArrowLeft") x-=40;
-if(e.key==="ArrowRight") x+=40;
-can.style.left=x+"px";
-});
+x=window.innerWidth/2;
 
 fallInterval=setInterval(()=>{
 let obj=waste[Math.random()*waste.length|0];
@@ -273,6 +293,21 @@ clearInterval(move);
 
 startTimer();
 }
+
+/* CONTROLS */
+function moveLeft(){x-=40;can.style.left=x+"px";}
+function moveRight(){x+=40;can.style.left=x+"px";}
+
+/* ✅ KEYBOARD SUPPORT */
+document.addEventListener("keydown", function(e){
+if(!can) return;
+if(e.key === "ArrowLeft"){
+moveLeft();
+}
+if(e.key === "ArrowRight"){
+moveRight();
+}
+});
 
 function playerCheck(ans){
 let correct=current.type || current.a;
