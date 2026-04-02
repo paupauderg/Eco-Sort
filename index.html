@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>EcoSort Final</title>
+<title>EcoSort</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#1e3c72;color:white;overflow:hidden;}
@@ -45,34 +45,32 @@ padding:8px;border-radius:8px;
 }
 
 .trashcan{
-position:fixed;
+position:absolute;
 bottom:120px;
-left:50%;
-transform:translateX(-50%);
-width:170px;height:60px;
+width:150px;height:60px;
 background:#ff9800;
 color:black;
 font-weight:bold;
 line-height:60px;
 text-align:center;
 border-radius:10px;
-font-size:13px;
+font-size:12px;
 }
 
 .controls{
 position:fixed;
-bottom:20px;
+bottom:10px;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 40px;
+padding:0 10px;
 }
 
 .ctrlBtn{
-width:120px;
-height:50px;
-font-size:18px;
-border-radius:10px;
+width:45%;
+height:80px;
+font-size:22px;
+border-radius:15px;
 border:none;
 background:#ffffffcc;
 }
@@ -85,12 +83,7 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <div id="s1" class="screen active">
 <h1>♻️ EcoSort</h1>
-<p style="width:70%;margin:auto;">
-EcoSort is an interactive waste management game designed to help students learn proper waste segregation. 
-Players will identify and classify different types of waste into biodegradable, non-biodegradable, and recyclable categories. 
-The game includes multiple modes to make learning fun, competitive, and engaging.
-</p>
-<br>
+<p>Rotate phone to LANDSCAPE for better control. KUNG AYAW MO, DE WAG!
 <button onclick="next('Name')">Start</button>
 </div>
 
@@ -102,22 +95,18 @@ The game includes multiple modes to make learning fun, competitive, and engaging
 </div>
 
 <div id="s2" class="screen">
-<h3>Select Difficulty (Time)</h3>
 <button onclick="setLevel(45)">Easy (45s)</button>
 <button onclick="setLevel(30)">Medium (30s)</button>
 <button onclick="setLevel(20)">Hard (20s)</button>
 </div>
 
 <div id="s3" class="screen">
-<h2>Select Game Mode</h2>
 <button onclick="setMode('sort')">Sorting</button>
 <button onclick="setMode('quiz')">Quiz</button>
 <button onclick="next('fallSelect')">Falling</button>
 </div>
 
 <div id="sfallSelect" class="screen">
-<h2>Select Target</h2>
-<p>Choose which type of waste you want to catch.</p>
 <button onclick="startFall('bio')">BIODEGRADABLE</button>
 <button onclick="startFall('nonbio')">NON-BIODEGRADABLE</button>
 <button onclick="startFall('recycle')">RECYCLABLE</button>
@@ -129,7 +118,7 @@ The game includes multiple modes to make learning fun, competitive, and engaging
 
 <div class="container">
 
-<div class="side">
+<div class="side" id="playerSide">
 <h2>YOU</h2>
 <div class="hud">
 <div id="scoreP">Score:0</div>
@@ -138,7 +127,7 @@ The game includes multiple modes to make learning fun, competitive, and engaging
 <div id="itemP" class="item"></div>
 </div>
 
-<div class="side">
+<div class="side" id="aiSide">
 <h2>AI 🤖</h2>
 <div class="hud">
 <div id="scoreAI">AI:0</div>
@@ -155,8 +144,8 @@ The game includes multiple modes to make learning fun, competitive, and engaging
 </div>
 
 <div id="controls" class="controls" style="display:none;">
-<button class="ctrlBtn" onclick="moveLeft()">⬅ LEFT</button>
-<button class="ctrlBtn" onclick="moveRight()">RIGHT ➡</button>
+<button class="ctrlBtn" onclick="moveLeft()">⬅</button>
+<button class="ctrlBtn" onclick="moveRight()">➡</button>
 </div>
 
 </div>
@@ -178,23 +167,12 @@ next(2);
 
 let time=30,score=0,aiScore=0,mode,current;
 let timerInt,fallInterval,targetType;
-let can,x;
+let canP,canAI,xP,xAI;
 
-/* SAME DATA */
-const make = (arr,type)=>arr.map(x=>({name:x,type:type}));
-
-const bio = make(["banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones","chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste","vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell","peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit","organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"],"bio");
-
-const nonbio = make(["plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap","snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film","rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic","plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste","food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"],"nonbio");
-
-const recycle = make(["paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder","envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)","paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can","aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap","clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"],"recycle");
-
-const waste=[...bio,...nonbio,...recycle];
-
-const quiz=[
-...bio.map(x=>({q:x.name+" belongs to?",a:"bio"})),
-...nonbio.map(x=>({q:x.name+" belongs to?",a:"nonbio"})),
-...recycle.map(x=>({q:x.name+" belongs to?",a:"recycle"}))
+const waste=[
+{name:"banana peel",type:"bio"},
+{name:"plastic bottle",type:"nonbio"},
+{name:"paper",type:"recycle"}
 ];
 
 function setLevel(t){time=t;next(3);}
@@ -205,14 +183,9 @@ score=0;aiScore=0;
 document.getElementById("bins").style.display="flex";
 document.getElementById("controls").style.display="none";
 next(4);
-setDirection();
 newRound();
 startTimer();
-}
-
-function setDirection(){
-if(mode==="sort"){direction.innerText="Click the correct bin.";}
-if(mode==="quiz"){direction.innerText="Answer using bins below.";}
+startAI();
 }
 
 function startTimer(){
@@ -223,41 +196,58 @@ timer.innerText="Time:"+time;
 if(time<=0){
 clearInterval(timerInt);
 clearInterval(fallInterval);
-alert(playerName+" Score:"+score);
+alert("You:"+score+" AI:"+aiScore);
 location.reload();
 }
 },1000);
 }
 
 function newRound(){
-if(mode==="sort"){
 current=waste[Math.random()*waste.length|0];
 itemP.innerText=current.name;
 itemAI.innerText=current.name;
 }
-if(mode==="quiz"){
-current=quiz[Math.random()*quiz.length|0];
-itemP.innerText=current.q;
-itemAI.innerText=current.q;
-}
+
+function playerCheck(ans){
+if(ans===current.type) score++; else score--;
+scoreP.innerText="Score:"+score;
+newRound();
 }
 
-/* FALL */
+/* AI SORT/QUIZ */
+function startAI(){
+setInterval(()=>{
+let guess=["bio","nonbio","recycle"][Math.random()*3|0];
+if(guess===current.type) aiScore++;
+scoreAI.innerText="AI:"+aiScore;
+},1000);
+}
+
+/* FALLING SPLIT */
 function startFall(type){
 targetType=type;
 document.getElementById("bins").style.display="none";
 document.getElementById("controls").style.display="flex";
-
 next(4);
 
 direction.innerText="Catch ONLY "+type.toUpperCase();
 
-can=document.createElement("div");
-can.className="trashcan";
-can.innerText=type.toUpperCase();
-document.body.appendChild(can);
+/* PLAYER CAN */
+canP=document.createElement("div");
+canP.className="trashcan";
+canP.style.left="25%";
+canP.innerText=type;
+document.body.appendChild(canP);
 
-x=window.innerWidth/2;
+/* AI CAN */
+canAI=document.createElement("div");
+canAI.className="trashcan";
+canAI.style.left="75%";
+canAI.innerText=type;
+document.body.appendChild(canAI);
+
+xP=window.innerWidth*0.25;
+xAI=window.innerWidth*0.75;
 
 fallInterval=setInterval(()=>{
 let obj=waste[Math.random()*waste.length|0];
@@ -275,13 +265,19 @@ div.style.top=y+"px";
 
 if(y>window.innerHeight-150){
 
-let canX=can.getBoundingClientRect().left;
-let objX=div.getBoundingClientRect().left;
-
-if(Math.abs(canX-objX)<100){
-if(obj.type===targetType){score++;}
-else{score--;}
+/* PLAYER */
+if(Math.abs(xP-div.offsetLeft)<80){
+if(obj.type===targetType) score++; else score--;
 scoreP.innerText="Score:"+score;
+}
+
+/* AI AUTO MOVE */
+xAI += (div.offsetLeft - xAI)*0.3;
+canAI.style.left=xAI+"px";
+
+if(Math.abs(xAI-div.offsetLeft)<80){
+if(obj.type===targetType) aiScore++; else aiScore--;
+scoreAI.innerText="AI:"+aiScore;
 }
 
 div.remove();
@@ -294,30 +290,15 @@ clearInterval(move);
 startTimer();
 }
 
-/* CONTROLS */
-function moveLeft(){x-=40;can.style.left=x+"px";}
-function moveRight(){x+=40;can.style.left=x+"px";}
+/* PLAYER MOVE */
+function moveLeft(){xP-=40;canP.style.left=xP+"px";}
+function moveRight(){xP+=40;canP.style.left=xP+"px";}
 
-/* ✅ KEYBOARD SUPPORT */
-document.addEventListener("keydown", function(e){
-if(!can) return;
-if(e.key === "ArrowLeft"){
-moveLeft();
-}
-if(e.key === "ArrowRight"){
-moveRight();
-}
+document.addEventListener("keydown",function(e){
+if(e.key==="ArrowLeft") moveLeft();
+if(e.key==="ArrowRight") moveRight();
 });
 
-function playerCheck(ans){
-let correct=current.type || current.a;
-if(ans===correct){score++;}
-else{score--;}
-scoreP.innerText="Score:"+score;
-newRound();
-}
-
 </script>
-
 </body>
 </html>
