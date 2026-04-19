@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>EcoSort Final</title>
+<title>Eco-Sort</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#1e3c72;color:white;overflow:hidden;}
@@ -81,37 +81,29 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <body>
 
-<!-- 🔇 MUTE BUTTON -->
 <button id="muteBtn" onclick="toggleMute()" style="
-position:fixed;
-top:10px;
-right:10px;
-z-index:999;
-padding:10px 15px;
-border:none;
-border-radius:10px;
-background:white;
-font-weight:bold;
-cursor:pointer;
-">
+position:fixed;top:10px;right:10px;z-index:999;
+padding:10px 15px;border:none;border-radius:10px;
+background:white;font-weight:bold;cursor:pointer;">
 🔊 Sound ON
 </button>
 
-<!-- 🔊 AUDIO (FIXED METHOD) -->
 <audio id="clickSound" src="click.mp3"></audio>
 <audio id="correctSound" src="correct.mp3"></audio>
 <audio id="wrongSound" src="wrong.mp3"></audio>
+<audio id="lobbyMusic" src="lobby.mp3" loop></audio>
+<audio id="gameMusic" src="game.mp3" loop></audio>
+<audio id="gameOverSound" src="gameover.mp3"></audio>
 
 <div id="s1" class="screen active">
 <h1>♻️ EcoSort</h1>
-<p>Rotate phone to <b>LANDSCAPE MODE</b></p>
+<p>Better played in <b>LANDSCAPE MODE</b></p>
 <p>Sorting = classify waste | Quiz = answer category | Falling = catch correct waste only</p>
-<button onclick="next('Name')">Start</button>
+<button onclick="startLobby(); next('Name')">Start</button>
 </div>
 
 <div id="sName" class="screen">
-<input id="username" placeholder="Enter name">
-<br><br>
+<input id="username" placeholder="Enter name"><br><br>
 <button onclick="saveName()">Continue</button>
 </div>
 
@@ -138,7 +130,6 @@ cursor:pointer;
 <h3 id="direction"></h3>
 
 <div class="container">
-
 <div class="side">
 <h2>YOU</h2>
 <div class="hud">
@@ -155,7 +146,6 @@ cursor:pointer;
 </div>
 <div id="itemAI" class="item"></div>
 </div>
-
 </div>
 
 <div class="bins" id="bins">
@@ -173,6 +163,39 @@ cursor:pointer;
 
 <script>
 
+/* DOM */
+const timer=document.getElementById("timer");
+const scoreP=document.getElementById("scoreP");
+const scoreAI=document.getElementById("scoreAI");
+const itemP=document.getElementById("itemP");
+const itemAI=document.getElementById("itemAI");
+const direction=document.getElementById("direction");
+
+/* AUDIO */
+let isMuted=false;
+function toggleMute(){
+isMuted=!isMuted;
+muteBtn.innerText=isMuted?"🔇 Sound OFF":"🔊 Sound ON";
+if(isMuted){lobbyMusic.pause();gameMusic.pause();}
+}
+
+function safePlay(a){if(!isMuted){a.currentTime=0;a.play().catch(()=>{});}}
+function playClick(){safePlay(clickSound);}
+function playCorrect(){safePlay(correctSound);}
+function playWrong(){safePlay(wrongSound);}
+function playGameOver(){safePlay(gameOverSound);}
+
+function startLobby(){
+if(!isMuted){lobbyMusic.volume=0.4;lobbyMusic.play().catch(()=>{});}
+}
+
+function startGameMusic(){
+if(!isMuted){gameMusic.volume=0.4;gameMusic.currentTime=0;gameMusic.play().catch(()=>{});}
+}
+
+document.querySelectorAll("button").forEach(b=>b.addEventListener("click",playClick));
+
+/* NAV */
 function next(n){
 document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
 document.getElementById("s"+n).classList.add("active");
@@ -180,75 +203,107 @@ document.getElementById("s"+n).classList.add("active");
 
 let playerName="";
 function saveName(){
-let n=document.getElementById("username").value;
+let n=username.value;
 if(!n){alert("Enter name");return;}
 playerName=n;
 next(2);
 }
 
-/* 🔇 MUTE */
-let isMuted=false;
-
-function toggleMute(){
-isMuted=!isMuted;
-document.getElementById("muteBtn").innerText =
-isMuted ? "🔇 Sound OFF" : "🔊 Sound ON";
-}
-
-/* 🔊 SAFE PLAY FUNCTION (IMPORTANT FIX) */
-function safePlay(audio){
-if(isMuted) return;
-if(!audio) return;
-
-audio.currentTime=0;
-audio.volume=1;
-
-let playPromise = audio.play();
-if(playPromise !== undefined){
-playPromise.catch(()=>{});
-}
-}
-
-function playClick(){
-safePlay(document.getElementById("clickSound"));
-}
-
-function playCorrect(){
-safePlay(document.getElementById("correctSound"));
-}
-
-/* 🔥 FIXED WRONG SOUND */
-function playWrong(){
-safePlay(document.getElementById("wrongSound"));
-}
-
-/* AUTO CLICK SOUND */
-document.querySelectorAll("button").forEach(btn=>{
-btn.addEventListener("click", playClick);
-});
-
+/* GAME */
 let time=30,score=0,aiScore=0,mode,current;
 let timerInt,fallInterval,targetType;
 let canP,canAI,xP,xAI;
 
-/* GAME DATA */
-const make=(arr,type)=>arr.map(x=>({name:x,type:type}));
+function setLevel(t){time=t;next(3);}
 
-const bio = make(["banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones","chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste","vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell","peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit","organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"],"bio");
+function setMode(m){
+mode=m;
+lobbyMusic.pause();
+startGameMusic();
+startGame();
+}
 
-const nonbio = make(["plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap","snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film","rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic","plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste","food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"],"nonbio");
+/* QUIZ DATA (50 QUESTIONS ONLY CHANGE) */
+const quizData=[
+{q:"Banana peel?",a:"bio"},{q:"Apple core?",a:"bio"},{q:"Leftover rice?",a:"bio"},
+{q:"Vegetable scraps?",a:"bio"},{q:"Egg shells?",a:"bio"},{q:"Coffee grounds?",a:"bio"},
+{q:"Tea bag?",a:"bio"},{q:"Bread?",a:"bio"},{q:"Fruit peel?",a:"bio"},
+{q:"Fish bones?",a:"bio"},
 
-const recycle = make(["paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder","envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)","paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can","aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap","clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"],"recycle");
+{q:"Plastic bottle?",a:"nonbio"},{q:"Plastic bag?",a:"nonbio"},
+{q:"Candy wrapper?",a:"nonbio"},{q:"Chip bag?",a:"nonbio"},
+{q:"Straw?",a:"nonbio"},{q:"Styrofoam?",a:"nonbio"},
+{q:"Plastic spoon?",a:"nonbio"},{q:"Plastic fork?",a:"nonbio"},
+{q:"Cup lid?",a:"nonbio"},{q:"Bubble wrap?",a:"nonbio"},
+
+{q:"Paper?",a:"recycle"},{q:"Notebook?",a:"recycle"},
+{q:"Newspaper?",a:"recycle"},{q:"Magazine?",a:"recycle"},
+{q:"Cardboard?",a:"recycle"},{q:"Carton box?",a:"recycle"},
+{q:"Paper bag?",a:"recycle"},{q:"Bond paper?",a:"recycle"},
+{q:"Old book?",a:"recycle"},{q:"Folder?",a:"recycle"},
+
+{q:"Leaf?",a:"bio"},{q:"Grass?",a:"bio"},{q:"Flower?",a:"bio"},
+{q:"Plant stem?",a:"bio"},{q:"Fruit seeds?",a:"bio"},
+
+{q:"Rubber band?",a:"nonbio"},{q:"Tape?",a:"nonbio"},
+{q:"Plastic string?",a:"nonbio"},{q:"Polybag?",a:"nonbio"},
+{q:"Plastic packaging?",a:"nonbio"},
+
+{q:"Envelope?",a:"recycle"},{q:"Clean paper?",a:"recycle"},
+{q:"Glass bottle?",a:"recycle"},{q:"Glass jar?",a:"recycle"},
+{q:"Aluminum can?",a:"recycle"},{q:"Tin can?",a:"recycle"},
+{q:"Metal lid?",a:"recycle"},{q:"Foil?",a:"recycle"},
+{q:"Clean container?",a:"recycle"},{q:"Paper cup?",a:"recycle"}
+];
+
+/* ORIGINAL DATA (UNCHANGED) */
+const make=(a,t)=>a.map(x=>({name:x,type:t}));
+
+const bio=make([
+"banana peel","apple core","leftover rice","vegetable scraps","egg shells",
+"coffee grounds","tea bag","bread","fruit peel","fish bones",
+"chicken bones","spoiled food","leaf","grass","flower",
+"plant stem","fruit seeds","paper napkin","tissue","food waste",
+"vegetable peel","fruit skin","organic waste","compost","garden waste",
+"weeds","flower petals","banana leaf","corn husk","coconut shell",
+"peanut shells","fruit core","tree leaves","plant roots","soil",
+"food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit",
+"organic scraps","paper plate","biodegradable bag","plant waste","natural fiber",
+"food crumbs","fruit pulp","leaf litter","organic trash","plant waste"
+],"bio");
+
+const nonbio=make([
+"plastic bottle","plastic bag","candy wrapper","chip bag","straw",
+"styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap",
+"snack wrapper","juice pouch","milk carton","plastic cover","old pen",
+"broken ruler","plastic cup","plastic plate","wrapper","plastic film",
+"rubber band","tape","plastic string","polybag","plastic packaging",
+"old toothbrush","plastic case","plastic toy","hard plastic","soft plastic",
+"plastic container","disposable cup","plastic lid","plastic scrap","plastic trash",
+"synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste",
+"food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic",
+"plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"
+],"nonbio");
+
+const recycle=make([
+"paper","notebook","newspaper","magazine","cardboard",
+"carton box","paper bag","bond paper","old book","folder",
+"envelope","clean paper","glass bottle","glass jar","aluminum can",
+"tin can","metal lid","foil","clean container","plastic bottle (clean)",
+"paper cup","egg tray","carton packaging","paper wrapper","office paper",
+"scratch paper","clean carton","clean bottle","glass container","metal can",
+"aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box",
+"paper sheet","reusable paper","clean packaging","glass scrap","metal scrap",
+"clean wrapper","recycle material","clean cup","clean can","clean jar",
+"paper scrap","recyclable waste","clean paper bag","clean box","recycle item"
+],"recycle");
 
 const waste=[...bio,...nonbio,...recycle];
 
-function setLevel(t){time=t;next(3);}
-function setMode(m){mode=m;startGame();}
-
 function startGame(){
 score=0;aiScore=0;
-document.getElementById("bins").style.display="flex";
-document.getElementById("controls").style.display="none";
+bins.style.display="flex";
+controls.style.display="none";
 next(4);
 newRound();
 startTimer();
@@ -263,26 +318,28 @@ timer.innerText="Time:"+time;
 if(time<=0){
 clearInterval(timerInt);
 clearInterval(fallInterval);
-alert("You:"+score+" AI:"+aiScore);
-location.reload();
+gameMusic.pause();
+playGameOver();
+setTimeout(()=>{alert("You:"+score+" AI:"+aiScore);location.reload();},1200);
 }
 },1000);
 }
 
 function newRound(){
+if(mode==="quiz"){
+current=quizData[Math.random()*quizData.length|0];
+itemP.innerText=current.q;
+itemAI.innerText=current.q;
+}else{
 current=waste[Math.random()*waste.length|0];
 itemP.innerText=current.name;
 itemAI.innerText=current.name;
 }
+}
 
 function playerCheck(ans){
-if(ans===current.type){
-score++;
-playCorrect();
-}else{
-score--;
-playWrong();
-}
+let correct=(mode==="quiz")?current.a:current.type;
+if(ans===correct){score++;playCorrect();}else{score--;playWrong();}
 scoreP.innerText="Score:"+score;
 newRound();
 }
@@ -290,17 +347,23 @@ newRound();
 function startAI(){
 setInterval(()=>{
 let guess=["bio","nonbio","recycle"][Math.random()*3|0];
-if(guess===current.type) aiScore++;
+let correct=(mode==="quiz")?current.a:current.type;
+if(guess===correct)aiScore++;
 scoreAI.innerText="AI:"+aiScore;
 },1200);
 }
 
 function startFall(type){
 targetType=type;
+lobbyMusic.pause();
+startGameMusic();
 
-document.getElementById("bins").style.display="none";
-document.getElementById("controls").style.display="flex";
+bins.style.display="none";
+controls.style.display="flex";
 next(4);
+
+startTimer();
+startAI();
 
 direction.innerText="Catch ONLY "+type.toUpperCase();
 
@@ -316,40 +379,38 @@ canAI.style.left="75%";
 canAI.innerText=type;
 document.body.appendChild(canAI);
 
-xP=window.innerWidth*0.25;
-xAI=window.innerWidth*0.75;
+xP=innerWidth*0.25;
+xAI=innerWidth*0.75;
+
+setInterval(()=>{
+xAI+=Math.random()<0.5?-40:40;
+canAI.style.left=xAI+"px";
+},800);
 
 fallInterval=setInterval(()=>{
-
 let obj=waste[Math.random()*waste.length|0];
 
 let div=document.createElement("div");
 div.className="falling";
 div.innerText=obj.name;
-div.style.left=Math.random()*window.innerWidth+"px";
+div.style.left=Math.random()*innerWidth+"px";
 document.body.appendChild(div);
 
 let y=0;
-
 let move=setInterval(()=>{
 y+=3;
 div.style.top=y+"px";
 
-if(y>window.innerHeight-150){
+if(y>innerHeight-150){
 
 if(Math.abs(xP-div.offsetLeft)<80){
-if(obj.type===targetType){
-score++;
-playCorrect();
-}else{
-score--;
-playWrong();
-}
+if(obj.type===targetType){score++;playCorrect();}
+else{score--;playWrong();}
 scoreP.innerText="Score:"+score;
 }
 
 if(Math.abs(xAI-div.offsetLeft)<80){
-if(obj.type===targetType) aiScore++;
+if(obj.type===targetType)aiScore++;
 else aiScore--;
 scoreAI.innerText="AI:"+aiScore;
 }
@@ -358,19 +419,17 @@ div.remove();
 clearInterval(move);
 }
 },50);
-
 },1800);
 }
 
 function moveLeft(){xP-=40;canP.style.left=xP+"px";}
 function moveRight(){xP+=40;canP.style.left=xP+"px";}
 
-document.addEventListener("keydown",function(e){
-if(e.key==="ArrowLeft") moveLeft();
-if(e.key==="ArrowRight") moveRight();
+document.addEventListener("keydown",e=>{
+if(e.key==="ArrowLeft")moveLeft();
+if(e.key==="ArrowRight")moveRight();
 });
 
 </script>
-
 </body>
 </html>
