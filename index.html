@@ -8,11 +8,9 @@
 body{margin:0;font-family:Arial;background:#1e3c72;color:white;overflow:hidden;}
 .screen{display:none;text-align:center;padding-top:50px;}
 .active{display:block}
-
 .container{display:flex;height:100vh;}
 .side{flex:1;border-right:2px solid white;position:relative;}
 .side:last-child{border:none;}
-
 .hud{position:absolute;top:10px;left:10px;}
 .item{margin-top:100px;font-size:22px;}
 
@@ -23,9 +21,9 @@ background:#000000aa;padding:10px;
 }
 
 .bin{
-width:160px;height:70px;
-line-height:20px;
-padding-top:15px;
+width:160px;height:80px;
+line-height:18px;
+padding-top:10px;
 border-radius:10px;
 cursor:pointer;
 font-weight:bold;
@@ -81,10 +79,7 @@ button{padding:10px 20px;margin:10px;border:none;border-radius:10px;}
 
 <body>
 
-<button id="muteBtn" onclick="toggleMute()" style="
-position:fixed;top:10px;right:10px;z-index:999;
-padding:10px 15px;border:none;border-radius:10px;
-background:white;font-weight:bold;cursor:pointer;">
+<button id="muteBtn" onclick="toggleMute()" style="position:fixed;top:10px;right:10px;z-index:999;padding:10px 15px;border:none;border-radius:10px;background:white;font-weight:bold;cursor:pointer;">
 🔊 Sound ON
 </button>
 
@@ -97,8 +92,8 @@ background:white;font-weight:bold;cursor:pointer;">
 
 <div id="s1" class="screen active">
 <h1>♻️ EcoSort</h1>
-<p>Better played in <b>LANDSCAPE MODE</b></p>
-<p>Sorting = classify waste | Falling = catch correct waste only</p>
+<p>Rotate phone to <b>LANDSCAPE MODE</b></p>
+<p>Sorting = Classify each waste item into the correct category | Falling = Catch only the correct type of waste while avoiding the wrong ones</p>
 <button onclick="startLobby(); next('Name')">Start</button>
 </div>
 
@@ -148,8 +143,8 @@ background:white;font-weight:bold;cursor:pointer;">
 </div>
 
 <div class="bins" id="bins">
-<div class="bin bio" onclick="playerCheck('Biodegradable')">BIODEGRADABLE</div>
-<div class="bin nonbio" onclick="playerCheck('Non-biodegrabale')">NON-BIODEGRADABLE</div>
+<div class="bin bio" onclick="playerCheck('Biodegradbale')">BIODEGRADABLE</div>
+<div class="bin nonbio" onclick="playerCheck('Non-biodegradable')">NON-BIODEGRADABLE</div>
 <div class="bin recycle" onclick="playerCheck('Recyclable')">RECYCLABLE</div>
 </div>
 
@@ -213,6 +208,15 @@ let time=30,score=0,aiScore=0,mode,current;
 let timerInt,fallInterval,targetType;
 let canP,canAI,xP,xAI;
 
+/* DATA */
+const make=(a,t)=>a.map(x=>({name:x,type:t}));
+
+const bio=make(["banana peel","apple core","leftover rice","vegetable scraps","egg shells"],"bio");
+const nonbio=make(["plastic bottle","plastic bag","candy wrapper","chip bag","straw"],"nonbio");
+const recycle=make(["paper","notebook","newspaper","magazine","cardboard"],"recycle");
+
+const waste=[...bio,...nonbio,...recycle];
+
 function setLevel(t){time=t;next(3);}
 
 function setMode(m){
@@ -222,19 +226,12 @@ startGameMusic();
 startGame();
 }
 
-/* ORIGINAL DATA (UNCHANGED) */
-const make=(a,t)=>a.map(x=>({name:x,type:t}));
-
-const bio=make(["banana peel","apple core","leftover rice","vegetable scraps","egg shells","coffee grounds","tea bag","bread","fruit peel","fish bones","chicken bones","spoiled food","leaf","grass","flower","plant stem","fruit seeds","paper napkin","tissue","food waste","vegetable peel","fruit skin","organic waste","compost","garden waste","weeds","flower petals","banana leaf","corn husk","coconut shell","peanut shells","fruit core","tree leaves","plant roots","soil","food leftovers","rice husk","tea leaves","vegetable stem","spoiled fruit","organic scraps","paper plate","biodegradable bag","plant waste","natural fiber","food crumbs","fruit pulp","leaf litter","organic trash","plant waste"],"bio");
-
-const nonbio=make(["plastic bottle","plastic bag","candy wrapper","chip bag","straw","styrofoam","plastic spoon","plastic fork","cup lid","bubble wrap","snack wrapper","juice pouch","milk carton","plastic cover","old pen","broken ruler","plastic cup","plastic plate","wrapper","plastic film","rubber band","tape","plastic string","polybag","plastic packaging","old toothbrush","plastic case","plastic toy","hard plastic","soft plastic","plastic container","disposable cup","plastic lid","plastic scrap","plastic trash","synthetic waste","plastic piece","plastic debris","plastic fragments","plastic waste","food wrapper","instant noodles cup","plastic sheet","plastic material","broken plastic","plastic parts","plastic junk","garbage plastic","waste plastic","plastic residue"],"nonbio");
-
-const recycle=make(["paper","notebook","newspaper","magazine","cardboard","carton box","paper bag","bond paper","old book","folder","envelope","clean paper","glass bottle","glass jar","aluminum can","tin can","metal lid","foil","clean container","plastic bottle (clean)","paper cup","egg tray","carton packaging","paper wrapper","office paper","scratch paper","clean carton","clean bottle","glass container","metal can","aluminum foil","clean plastic","recyclable plastic","paper roll","cardboard box","paper sheet","reusable paper","clean packaging","glass scrap","metal scrap","clean wrapper","recycle material","clean cup","clean can","clean jar","paper scrap","recyclable waste","clean paper bag","clean box","recycle item"],"recycle");
-
-const waste=[...bio,...nonbio,...recycle];
-
 function startGame(){
-score=0;aiScore=0;
+score=0;
+aiScore=0;
+
+localStorage.removeItem("ecoSortSave"); // FIX
+
 bins.style.display="flex";
 controls.style.display="none";
 next(4);
@@ -248,6 +245,7 @@ timer.innerText="Time:"+time;
 timerInt=setInterval(()=>{
 time--;
 timer.innerText="Time:"+time;
+
 if(time<=0){
 clearInterval(timerInt);
 clearInterval(fallInterval);
@@ -265,21 +263,26 @@ itemAI.innerText=current.name;
 }
 
 function playerCheck(ans){
-let correct=current.type;
-if(ans===correct){score++;playCorrect();}else{score--;playWrong();}
+if(ans===current.type){score++;playCorrect();}
+else{score--;playWrong();}
 scoreP.innerText="Score:"+score;
 newRound();
 }
 
 function startAI(){
-setInterval(()=>{
-let guess=["Biodegradable","Non-biodegadable","recyclable"][Math.random()*3|0];
-let correct=current.type;
-if(guess===correct)aiScore++;
+clearInterval(window.aiInt);
+
+window.aiInt=setInterval(()=>{
+let guess=["bio","nonbio","recycle"][Math.random()*3|0];
+
+if(current && guess===current.type){
+aiScore++;
 scoreAI.innerText="AI:"+aiScore;
+}
 },1200);
 }
 
+/* FALLING */
 function startFall(type){
 targetType=type;
 lobbyMusic.pause();
@@ -356,22 +359,6 @@ document.addEventListener("keydown",e=>{
 if(e.key==="ArrowLeft")moveLeft();
 if(e.key==="ArrowRight")moveRight();
 });
-
-/* TILT CONTROL */
-if (window.DeviceOrientationEvent) {
-window.addEventListener("deviceorientation", function(e){
-let tilt = e.gamma;
-if(!tilt) return;
-
-let moveSpeed = tilt / 5;
-xP += moveSpeed;
-
-if(xP < 0) xP = 0;
-if(xP > window.innerWidth - 150) xP = window.innerWidth - 150;
-
-if(canP) canP.style.left = xP + "px";
-});
-}
 
 </script>
 </body>
